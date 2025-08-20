@@ -47,10 +47,10 @@ export function HeroSection() {
           {/* Trust indicators */}
           <div className="mt-16">
             <p className="text-sm font-medium text-muted-foreground">Trusted by Government Agencies</p>
-            <div className="mt-4 flex items-center justify-center space-x-8 opacity-60">
-              <div className="glass-card px-6 py-3 text-sm font-medium">Ministry of Statistics</div>
-              <div className="glass-card px-6 py-3 text-sm font-medium">Digital India Initiative</div>
-              <div className="glass-card px-6 py-3 text-sm font-medium">National Sample Survey</div>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 opacity-60">
+              <div className="glass-card px-6 py-3 text-sm font-medium text-center">Ministry of Statistics</div>
+              <div className="glass-card px-6 py-3 text-sm font-medium text-center">Digital India Initiative</div>
+              <div className="glass-card px-6 py-3 text-sm font-medium text-center">National Sample Survey</div>
             </div>
           </div>
         </div>
