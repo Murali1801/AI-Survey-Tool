@@ -1,4 +1,5 @@
 import { GlasmorphismHeader } from "@/components/glassmorphism-header"
+import { TemplateList } from "@/components/templates/template-list"
 
 export default function TemplatesPage() {
   return (
@@ -8,9 +9,10 @@ export default function TemplatesPage() {
         <div className="mb-8">
           <h1 className="font-work-sans text-3xl font-bold text-foreground">Survey Templates</h1>
           <p className="mt-2 text-muted-foreground">
-            This feature is coming soon.
+            Choose from a variety of templates to get started quickly.
           </p>
         </div>
+        <TemplateList />
       </main>
     </div>
   )

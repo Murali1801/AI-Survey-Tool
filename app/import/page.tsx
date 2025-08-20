@@ -1,4 +1,5 @@
 import { GlasmorphismHeader } from "@/components/glassmorphism-header"
+import { FileUpload } from "@/components/import/file-upload"
 
 export default function ImportPage() {
   return (
@@ -8,9 +9,10 @@ export default function ImportPage() {
         <div className="mb-8">
           <h1 className="font-work-sans text-3xl font-bold text-foreground">Import Data</h1>
           <p className="mt-2 text-muted-foreground">
-            This feature is coming soon.
+            Upload your existing survey data in CSV format.
           </p>
         </div>
+        <FileUpload />
       </main>
     </div>
   )

@@ -1,4 +1,5 @@
 import { GlasmorphismHeader } from "@/components/glassmorphism-header"
+import { UsersTable } from "@/components/users/users-table"
 
 export default function UsersPage() {
   return (
@@ -8,9 +9,10 @@ export default function UsersPage() {
         <div className="mb-8">
           <h1 className="font-work-sans text-3xl font-bold text-foreground">Manage Users</h1>
           <p className="mt-2 text-muted-foreground">
-            This feature is coming soon.
+            Add, edit, or remove users from the system.
           </p>
         </div>
+        <UsersTable />
       </main>
     </div>
   )

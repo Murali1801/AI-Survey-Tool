@@ -1,4 +1,5 @@
 import { GlasmorphismHeader } from "@/components/glassmorphism-header"
+import { SampleCharts } from "@/components/reports/sample-charts"
 
 export default function ReportsPage() {
   return (
@@ -8,9 +9,10 @@ export default function ReportsPage() {
         <div className="mb-8">
           <h1 className="font-work-sans text-3xl font-bold text-foreground">View Reports</h1>
           <p className="mt-2 text-muted-foreground">
-            This feature is coming soon.
+            Here are some sample reports and analytics.
           </p>
         </div>
+        <SampleCharts />
       </main>
     </div>
   )
