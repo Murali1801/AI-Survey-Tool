@@ -1,18 +1,27 @@
-"use client"
+'use client'
 
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Plus, Sparkles, GripVertical, Trash2 } from "lucide-react"
+import { Plus, Sparkles, GripVertical, Trash2, Loader2 } from "lucide-react"
 import { QuestionTypeSelector } from "./question-type-selector"
 import { AIQuestionGenerator } from "./ai-question-generator"
+import { db } from "@/lib/firebase"
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { useAuth } from "@/hooks/use-auth"
+import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
 
 export function SurveyBuilder() {
   const [surveyTitle, setSurveyTitle] = useState("")
   const [surveyDescription, setSurveyDescription] = useState("")
   const [questions, setQuestions] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const router = useRouter()
 
   const addQuestion = (type: string) => {
     const newQuestion = {
@@ -32,6 +41,42 @@ export function SurveyBuilder() {
 
   const updateQuestion = (id: number, updates: any) => {
     setQuestions(questions.map((q) => (q.id === id ? { ...q, ...updates } : q)))
+  }
+
+  const handlePublish = async () => {
+    if (!user) {
+      toast({ title: "Error", description: "You must be logged in to create a survey.", variant: "destructive" })
+      return
+    }
+
+    if (!surveyTitle.trim()) {
+      toast({ title: "Error", description: "Survey title is required.", variant: "destructive" })
+      return
+    }
+
+    if (questions.length === 0) {
+      toast({ title: "Error", description: "A survey must have at least one question.", variant: "destructive" })
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const surveyData = {
+        title: surveyTitle,
+        description: surveyDescription,
+        questions,
+        authorId: user.uid,
+        createdAt: serverTimestamp(),
+        status: "published",
+      }
+      const docRef = await addDoc(collection(db, "surveys"), surveyData)
+      toast({ title: "Success", description: "Survey published successfully!" })
+      router.push(`/surveys/${docRef.id}`)
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -180,7 +225,16 @@ export function SurveyBuilder() {
         <Button variant="outline" className="glassmorphism border-white/20 bg-transparent">
           Save as Draft
         </Button>
-        <Button className="bg-primary hover:bg-primary/90">Publish Survey</Button>
+        <Button onClick={handlePublish} className="bg-primary hover:bg-primary/90" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Publishing...
+            </>
+          ) : (
+            "Publish Survey"
+          )}
+        </Button>
       </div>
     </div>
   )

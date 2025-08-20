@@ -1,6 +1,6 @@
-"use client"
+'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,8 +8,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { ChevronLeft, ChevronRight, Send } from "lucide-react"
+import { ChevronLeft, ChevronRight, Send, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { db } from "@/lib/firebase"
+import { doc, getDoc, addDoc, collection, serverTimestamp } from "firebase/firestore"
+import { useAuth } from "@/hooks/use-auth"
+import { useToast } from "@/hooks/use-toast"
 
 interface SurveyResponseInterfaceProps {
   surveyId: string
@@ -17,59 +21,33 @@ interface SurveyResponseInterfaceProps {
 
 export function SurveyResponseInterface({ surveyId }: SurveyResponseInterfaceProps) {
   const router = useRouter()
+  const [survey, setSurvey] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [responses, setResponses] = useState<Record<string, any>>({})
+  const { user } = useAuth()
+  const { toast } = useToast()
 
-  // Mock survey questions - in real app, fetch based on surveyId
-  const questions = [
-    {
-      id: "q1",
-      type: "multiple-choice",
-      title: "How would you rate your overall satisfaction with our service?",
-      description: "Please select the option that best describes your experience",
-      required: true,
-      options: ["Very Satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very Dissatisfied"],
-    },
-    {
-      id: "q2",
-      type: "checkbox",
-      title: "Which features do you use most frequently?",
-      description: "Select all that apply",
-      required: false,
-      options: ["Dashboard", "Reports", "Analytics", "User Management", "API Access", "Mobile App"],
-    },
-    {
-      id: "q3",
-      type: "textarea",
-      title: "What improvements would you suggest?",
-      description: "Please provide detailed feedback on areas for improvement",
-      required: false,
-      options: [],
-    },
-    {
-      id: "q4",
-      type: "rating",
-      title: "How likely are you to recommend us to others?",
-      description: "Scale from 1 (Not likely) to 10 (Very likely)",
-      required: true,
-      options: [],
-    },
-    {
-      id: "q5",
-      type: "text",
-      title: "What is your primary use case for our platform?",
-      description: "Brief description of how you use our service",
-      required: false,
-      options: [],
-    },
-  ]
+  useEffect(() => {
+    const fetchSurvey = async () => {
+      const docRef = doc(db, "surveys", surveyId)
+      const docSnap = await getDoc(docRef)
+      if (docSnap.exists()) {
+        setSurvey({ id: docSnap.id, ...docSnap.data() })
+      } else {
+        setSurvey(null)
+      }
+      setIsLoading(false)
+    }
+    fetchSurvey()
+  }, [surveyId])
 
   const updateResponse = (questionId: string, value: any) => {
     setResponses((prev) => ({ ...prev, [questionId]: value }))
   }
 
   const nextQuestion = () => {
-    if (currentQuestion < questions.length - 1) {
+    if (survey && currentQuestion < survey.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1)
     }
   }
@@ -80,14 +58,46 @@ export function SurveyResponseInterface({ surveyId }: SurveyResponseInterfacePro
     }
   }
 
-  const submitSurvey = () => {
-    // In real app, submit responses to API
-    console.log("Survey responses:", responses)
-    router.push(`/survey/${surveyId}/complete`)
+  const submitSurvey = async () => {
+    setIsLoading(true)
+    try {
+      const responseData = {
+        surveyId,
+        responses,
+        submittedAt: serverTimestamp(),
+        userId: user?.uid || null,
+      }
+      await addDoc(collection(db, "responses"), responseData)
+      toast({ title: "Success", description: "Survey submitted successfully!" })
+      router.push(`/survey/${surveyId}/complete`)
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const question = questions[currentQuestion]
-  const isLastQuestion = currentQuestion === questions.length - 1
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!survey) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium text-foreground">Survey not found</h3>
+        <p className="text-muted-foreground mt-2">
+          The survey you are looking for does not exist.
+        </p>
+      </div>
+    )
+  }
+
+  const question = survey.questions[currentQuestion]
+  const isLastQuestion = currentQuestion === survey.questions.length - 1
   const canProceed = !question.required || responses[question.id]
 
   const renderQuestion = () => {
@@ -98,7 +108,7 @@ export function SurveyResponseInterface({ surveyId }: SurveyResponseInterfacePro
             value={responses[question.id] || ""}
             onValueChange={(value) => updateResponse(question.id, value)}
           >
-            {question.options.map((option, index) => (
+            {question.options.map((option: string, index: number) => (
               <div key={index} className="flex items-center space-x-2">
                 <RadioGroupItem value={option} id={`${question.id}-${index}`} />
                 <Label htmlFor={`${question.id}-${index}`} className="cursor-pointer">
@@ -112,7 +122,7 @@ export function SurveyResponseInterface({ surveyId }: SurveyResponseInterfacePro
       case "checkbox":
         return (
           <div className="space-y-3">
-            {question.options.map((option, index) => (
+            {question.options.map((option: string, index: number) => (
               <div key={index} className="flex items-center space-x-2">
                 <Checkbox
                   id={`${question.id}-${index}`}
@@ -196,7 +206,7 @@ export function SurveyResponseInterface({ surveyId }: SurveyResponseInterfacePro
         <CardHeader>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">
-              Question {currentQuestion + 1} of {questions.length}
+              Question {currentQuestion + 1} of {survey.questions.length}
             </span>
             {question.required && (
               <span className="text-xs text-red-500 bg-red-500/10 px-2 py-1 rounded">Required</span>
@@ -221,12 +231,12 @@ export function SurveyResponseInterface({ surveyId }: SurveyResponseInterfacePro
         </Button>
 
         <div className="text-sm text-muted-foreground">
-          {currentQuestion + 1} / {questions.length}
+          {currentQuestion + 1} / {survey.questions.length}
         </div>
 
         {isLastQuestion ? (
-          <Button onClick={submitSurvey} disabled={!canProceed} className="bg-primary hover:bg-primary/90">
-            <Send className="h-4 w-4 mr-2" />
+          <Button onClick={submitSurvey} disabled={!canProceed || isLoading} className="bg-primary hover:bg-primary/90">
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
             Submit Survey
           </Button>
         ) : (
@@ -239,7 +249,7 @@ export function SurveyResponseInterface({ surveyId }: SurveyResponseInterfacePro
 
       {/* Progress Indicator */}
       <div className="flex justify-center space-x-2">
-        {questions.map((_, index) => (
+        {survey.questions.map((_: any, index: number) => (
           <div
             key={index}
             className={`w-2 h-2 rounded-full transition-colors ${index <= currentQuestion ? "bg-primary" : "bg-muted"}`}

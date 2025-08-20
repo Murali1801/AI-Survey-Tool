@@ -31,7 +31,7 @@ export function GlasmorphismHeader() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <BarChart3 className="h-5 w-5" />
             </div>
-            <span className="font-work-sans font-bold text-xl text-foreground">AI Survey Tool</span>
+            <span className="font-work-sans font-bold text-base sm:text-lg text-foreground">AI Survey Tool</span>
           </Link>
 
           {/* Desktop Navigation */}

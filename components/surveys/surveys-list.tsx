@@ -1,56 +1,43 @@
+'use client'
+
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal, Eye, Edit, BarChart3, Users, Calendar } from "lucide-react"
+import { MoreHorizontal, Eye, Edit, BarChart3, Users, Calendar, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { db } from "@/lib/firebase"
+import { collection, query, where, onSnapshot } from "firebase/firestore"
+import { useAuth } from "@/hooks/use-auth"
 
 export function SurveysList() {
-  const surveys = [
-    {
-      id: "1",
-      title: "Customer Satisfaction Survey 2024",
-      description: "Comprehensive feedback collection for service improvement",
-      status: "active",
-      responses: 342,
-      completion: 78,
-      created: "2024-01-15",
-      category: "Feedback",
-    },
-    {
-      id: "2",
-      title: "Employee Engagement Assessment",
-      description: "Annual employee satisfaction and engagement survey",
-      status: "active",
-      responses: 156,
-      completion: 45,
-      created: "2024-01-10",
-      category: "Research",
-    },
-    {
-      id: "3",
-      title: "Product Feature Evaluation",
-      description: "User feedback on new product features and usability",
-      status: "draft",
-      responses: 0,
-      completion: 0,
-      created: "2024-01-08",
-      category: "Evaluation",
-    },
-    {
-      id: "4",
-      title: "Market Research Study",
-      description: "Consumer behavior and market trends analysis",
-      status: "completed",
-      responses: 892,
-      completion: 100,
-      created: "2023-12-20",
-      category: "Research",
-    },
-  ]
+  const [surveys, setSurveys] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (!user) {
+      setIsLoading(false)
+      return
+    }
+
+    const q = query(collection(db, "surveys"), where("authorId", "==", user.uid))
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const surveysData: any[] = []
+      querySnapshot.forEach((doc) => {
+        surveysData.push({ id: doc.id, ...doc.data() })
+      })
+      setSurveys(surveysData)
+      setIsLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [user])
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
+      case "published":
         return "bg-green-500/20 text-green-700 border-green-500/30"
       case "draft":
         return "bg-yellow-500/20 text-yellow-700 border-yellow-500/30"
@@ -59,6 +46,28 @@ export function SurveysList() {
       default:
         return "bg-gray-500/20 text-gray-700 border-gray-500/30"
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (surveys.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium text-foreground">No surveys found</h3>
+        <p className="text-muted-foreground mt-2">
+          Get started by creating a new survey.
+        </p>
+        <Button asChild className="mt-4">
+          <Link href="/surveys/create">Create Survey</Link>
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -74,9 +83,11 @@ export function SurveysList() {
                 <div className="flex items-center gap-3">
                   <CardTitle className="text-xl text-foreground">{survey.title}</CardTitle>
                   <Badge className={getStatusColor(survey.status)}>{survey.status}</Badge>
-                  <Badge variant="outline" className="border-white/20">
-                    {survey.category}
-                  </Badge>
+                  {survey.category && (
+                    <Badge variant="outline" className="border-white/20">
+                      {survey.category}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-muted-foreground">{survey.description}</p>
               </div>
@@ -90,15 +101,15 @@ export function SurveysList() {
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  <span>{survey.responses} responses</span>
+                  <span>{survey.responses || 0} responses</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
-                  <span>{survey.completion}% complete</span>
+                  <span>{survey.completion || 0}% complete</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  <span>Created {survey.created}</span>
+                  <span>Created {survey.createdAt?.toDate().toLocaleDateString()}</span>
                 </div>
               </div>
 
