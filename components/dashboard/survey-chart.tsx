@@ -1,7 +1,8 @@
-"use client"
+'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
+import { useTheme } from "next-themes"
 
 const data = [
   { month: "Jan", responses: 1200, quality: 92 },
@@ -15,6 +16,11 @@ const data = [
 ]
 
 export function SurveyChart() {
+  const { resolvedTheme } = useTheme()
+
+  const primaryColor = resolvedTheme === 'dark' ? 'hsl(120, 80%, 70%)' : 'hsl(260, 80%, 55%)';
+  const backgroundColor = resolvedTheme === 'dark' ? 'hsl(142, 20%, 8%)' : 'hsl(240, 20%, 99%)';
+
   return (
     <Card className="glass-card border-border/50">
       <CardHeader>
@@ -27,14 +33,11 @@ export function SurveyChart() {
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="colorResponses" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorQuality" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                  <stop offset="5%" stopColor={primaryColor} stopOpacity={0.8} />
+                  <stop offset="95%" stopColor={primaryColor} stopOpacity={0.1} />
                 </linearGradient>
               </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
               <YAxis axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
               <Tooltip
@@ -48,10 +51,12 @@ export function SurveyChart() {
               <Area
                 type="monotone"
                 dataKey="responses"
-                stroke="hsl(var(--primary))"
+                stroke={primaryColor}
                 fillOpacity={1}
                 fill="url(#colorResponses)"
-                strokeWidth={2}
+                strokeWidth={3}
+                dot={{ r: 6, fill: primaryColor, stroke: backgroundColor, strokeWidth: 2 }}
+                activeDot={{ r: 8, fill: primaryColor, stroke: backgroundColor, strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>

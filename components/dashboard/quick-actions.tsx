@@ -60,7 +60,7 @@ export function QuickActions() {
         {actions.map((action, index) => {
           const Icon = action.icon
           return (
-            <Link href={action.href} key={index}>
+            <Link href={action.href} key={index} className="group">
               <Button
                 variant={action.variant}
                 className="w-full justify-start h-auto p-4 glass hover:bg-primary/5"
@@ -68,7 +68,9 @@ export function QuickActions() {
                 <Icon className="mr-3 h-5 w-5" />
                 <div className="text-left">
                   <div className="font-medium">{action.title}</div>
-                  <div className="text-xs text-muted-foreground">{action.description}</div>
+                  <div className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                    {action.description}
+                  </div>
                 </div>
               </Button>
             </Link>
